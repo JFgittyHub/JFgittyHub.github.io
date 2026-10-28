@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jess Ford Scheduling — demo preview</title>
+  <base href="/preview/v1/" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #171d25;
+      --panel2: #1e2630;
+      --line: #2a3441;
+      --text: #e8eef5;
+      --muted: #9aa8b8;
+      --accent: #3b82f6;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --pending: #a78bfa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand { display: flex; flex-direction: column; gap: 2px; }
+    .brand strong { font-size: 15px; letter-spacing: 0.01em; }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #243044;
+      color: #93c5fd;
+      width: fit-content;
+    }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    select, button {
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+    }
+    button { cursor: pointer; }
+    button.primary { background: var(--accent); border-color: #2563eb; color: white; font-weight: 600; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    main { padding: 16px 20px 40px; max-width: 1200px; margin: 0 auto; }
+    .banner {
+      background: #1a2740;
+      border: 1px solid #27406a;
+      color: #c7dbff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .stat .label { color: var(--muted); font-size: 12px; }
+    .stat .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 14px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel2);
+    }
+    .card .body { padding: 8px; }
+    .appt {
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+    }
+    .appt:hover { background: var(--panel2); }
+    .time { font-variant-numeric: tabular-nums; font-weight: 700; color: #cbd5e1; }
+    .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space:nowrap;
+    }
+    .confirmed { background: #143524; color: #86efac; }
+    .pending { background: #2a2150; color: #ddd6fe; }
+    .noshow { background: #3f1515; color: #fecaca; }
+    .arrived { background: #1e3a5f; color: #93c5fd; }
+    .flag {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fecaca;
+      border: 1px solid #7f1d1d;
+      border-radius: 4px;
+      padding: 1px 5px;
+      vertical-align: middle;
+    }
+    .empty { color: var(--muted); padding: 16px; font-size: 13px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .actions button { padding: 5px 8px; font-size: 12px; }
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <strong>Jess Ford · Appointments</strong>
+      <span class="badge">Scheduling demo preview · sample data only</span>
+    </div>
+    <div class="controls">
+      <label>
+        Store
+        <select id="store"></select>
+      </label>
+      <button type="button" id="prevDay" aria-label="Previous day">←</button>
+      <strong id="dayLabel"></strong>
+      <button type="button" id="nextDay" aria-label="Next day">→</button>
+      <button type="button" class="primary" id="seedBtn">Reload sample day</button>
+    </div>
+  </header>
+  <main>
+    <div class="banner">
+      Public preview of the Jess Ford Scheduling desk. All names, vehicles, and bookings are sample data — not a live shop. Nothing is saved.
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="label">Confirmed</div><div class="value" id="statConfirmed">0</div></div>
+      <div class="stat"><div class="label">Pending online</div><div class="value" id="statPending">0</div></div>
+      <div class="stat"><div class="label">Arrived</div><div class="value" id="statArrived">0</div></div>
+      <div class="stat"><div class="label">No-show</div><div class="value" id="statNoshow">0</div></div>
+    </div>
+    <div class="layout">
+      <section class="card">
+        <h2>Day board</h2>
+        <div class="body" id="board"></div>
+      </section>
+      <section class="card">
+        <h2>Online requests (hold slot until approved)</h2>
+        <div class="body" id="requests"></div>
+      </section>
+    </div>
+    <footer>
+      Module: Scheduling (screen label: Appointments). Stores: Grand Coulee and Pullman — separate sample boards.
+      Lanes: waiter / drop-off. Express jobs use the Express lane. Path: <code>/preview/v1/</code>.
+    </footer>
+  </main>
+  <script>
+    const STORES = [
+      { id: "gc", name: "Grand Coulee" },
+      { id: "pl", name: "Pullman" },
+    ];
+
+    const SAMPLE = {
+      gc: [
+        { id: "gc1", time: "08:00", customer: "Maria Alvarez", vehicle: "2021 F-150", service: "Oil & filter (Express)", lane: "waiter", advisor: "Chris N.", status: "confirmed", noshowFlag: false },
+        { id: "gc2", time: "08:30", customer: "Tom Bradley", vehicle: "2019 Escape", service: "Brake inspection", lane: "drop-off", advisor: "Chris N.", status: "arrived", noshowFlag: false },
+        { id: "gc3", time: "09:00", customer: "Sam Ortiz", vehicle: "2020 Ranger", service: "Multi-point + tires", lane: "drop-off", advisor: "Jamie R.", status: "pending", noshowFlag: false },
+        { id: "gc4", time: "10:30", customer: "Priya Shah", vehicle: "2018 Explorer", service: "Battery test", lane: "waiter", advisor: "Jamie R.", status: "confirmed", noshowFlag: true },
+        { id: "gc5", time: "13:00", customer: "Ken Wu", vehicle: "2022 Maverick", service: "Express rotate & balance", lane: "waiter", advisor: "Chris N.", status: "confirmed", noshowFlag: false },
+      ],
+      pl: [
+        { id: "pl1", time: "07:45", customer: "Elena Ross", vehicle: "2020 Edge", service: "Oil & filter (Express)", lane: "waiter", advisor: "Pat K.", status: "arrived", noshowFlag: false },
+        { id: "pl2", time: "09:15", customer: "Noah Green", vehicle: "2017 F-250", service: "Diesel service", lane: "drop-off", advisor: "Pat K.", status: "confirmed", noshowFlag: false },
+        { id: "pl3", time: "11:00", customer: "Ava Chen", vehicle: "2023 Bronco Sport", service: "Alignment check", lane: "drop-off", advisor: "Lee M.", status: "pending", noshowFlag: false },
+        { id: "pl4", time: "14:30", customer: "Omar Diaz", vehicle: "2016 Fusion", service: "Check engine light", lane: "waiter", advisor: "Lee M.", status: "confirmed", noshowFlag: false },
+      ],
+    };
+
+    const state = {
+      store: "gc",
+      dayOffset: 0,
+      appts: JSON.parse(JSON.stringify(SAMPLE)),
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    function dayDate() {
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      d.setDate(d.getDate() + state.dayOffset);
+      return d;
+    }
+
+    function formatDay(d) {
+      return d.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        timeZone: "America/Los_Angeles",
+      }) + " · Pacific";
+    }
+
+    function statusClass(s) {
+      if (s === "pending") return "pending";
+      if (s === "noshow") return "noshow";
+      if (s === "arrived") return "arrived";
+      return "confirmed";
+    }
+
+    function statusLabel(s) {
+      if (s === "pending") return "Pending online";
+      if (s === "noshow") return "No-show";
+      if (s === "arrived") return "Arrived";
+      return "Confirmed";
+    }
+
+    function currentList() {
+      return state.appts[state.store] || [];
+    }
+
+    function renderStats() {
+      const list = currentList();
+      el("statConfirmed").textContent = list.filter((a) => a.status === "confirmed").length;
+      el("statPending").textContent = list.filter((a) => a.status === "pending").length;
+      el("statArrived").textContent = list.filter((a) => a.status === "arrived").length;
+      el("statNoshow").textContent = list.filter((a) => a.status === "noshow").length;
+    }
+
+    function renderBoard() {
+      const board = el("board");
+      const list = currentList()
+        .filter((a) => a.status !== "pending")
+        .slice()
+        .sort((a, b) => a.time.localeCompare(b.time));
+      if (!list.length) {
+        board.innerHTML = '<div class="empty">No appointments on the board for this sample day.</div>';
+        return;
+      }
+      board.innerHTML = list
+        .map((a) => {
+          const flag = a.noshowFlag ? '<span class="flag">Prior no-show</span>' : "";
+          const noshowBtn =
+            a.status === "confirmed" || a.status === "arrived"
+              ? `<button type="button" data-act="noshow" data-id="${a.id}">Mark no-show</button>`
+              : "";
+          const arriveBtn =
+            a.status === "confirmed"
+              ? `<button type="button" data-act="arrive" data-id="${a.id}">Mark arrived</button>`
+              : "";
+          return `<article class="appt">
+            <div class="time">${a.time}</div>
+            <div>
+              <div><strong>${a.customer}</strong>${flag}</div>
+              <div class="meta">${a.vehicle} · ${a.service}</div>
+              <div class="meta">${a.lane} · Advisor ${a.advisor}</div>
+              <div class="actions">${arriveBtn}${noshowBtn}</div>
+            </div>
+            <span class="pill ${statusClass(a.status)}">${statusLabel(a.status)}</span>
+          </article>`;
+        })
+        .join("");
+    }
+
+    function renderRequests() {
+      const box = el("requests");
+      const list = currentList()
+        .filter((a) => a.status === "pending")
+        .slice()
+        .sort((a, b) => a.time.localeCompare(b.time));
+      if (!list.length) {
+        box.innerHTML = '<div class="empty">No pending online requests.</div>';
+        return;
+      }
+      box.innerHTML = list
+        .map(
+          (a) => `<article class="appt">
+            <div class="time">${a.time}</div>
+            <div>
+              <div><strong>${a.customer}</strong></div>
+              <div class="meta">${a.vehicle} · ${a.service}</div>
+              <div class="meta">${a.lane} · Advisor ${a.advisor} · slot held</div>
+              <div class="actions">
+                <button type="button" data-act="approve" data-id="${a.id}">Approve</button>
+                <button type="button" data-act="decline" data-id="${a.id}">Decline</button>
+              </div>
+            </div>
+            <span class="pill pending">Pending online</span>
+          </article>`
+        )
+        .join("");
+    }
+
+    function render() {
+      el("dayLabel").textContent = formatDay(dayDate());
+      renderStats();
+      renderBoard();
+      renderRequests();
+    }
+
+    function findAppt(id) {
+      return currentList().find((a) => a.id === id);
+    }
+
+    function onAction(act, id) {
+      const a = findAppt(id);
+      if (!a) return;
+      if (act === "approve") a.status = "confirmed";
+      if (act === "decline") {
+        state.appts[state.store] = currentList().filter((x) => x.id !== id);
+      }
+      if (act === "arrive") a.status = "arrived";
+      if (act === "noshow") {
+        a.status = "noshow";
+        a.noshowFlag = true;
+      }
+      render();
+    }
+
+    function initStores() {
+      const sel = el("store");
+      sel.innerHTML = STORES.map((s) => `<option value="${s.id}">${s.name}</option>`).join("");
+      sel.value = state.store;
+      sel.addEventListener("change", () => {
+        state.store = sel.value;
+        render();
+      });
+    }
+
+    el("prevDay").addEventListener("click", () => {
+      state.dayOffset -= 1;
+      render();
+    });
+    el("nextDay").addEventListener("click", () => {
+      state.dayOffset += 1;
+      render();
+    });
+    el("seedBtn").addEventListener("click", () => {
+      state.appts = JSON.parse(JSON.stringify(SAMPLE));
+      state.dayOffset = 0;
+      render();
+    });
+    document.body.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      const act = t.getAttribute("data-act");
+      const id = t.getAttribute("data-id");
+      if (act && id) onAction(act, id);
+    });
+
+    initStores();
+    render();
+  </script>
+</body>
+</html>
